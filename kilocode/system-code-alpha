@@ -8,20 +8,16 @@ Execute deterministic code changes via a single atomic terminal script, with man
 4) Idempotent: safe to re-run; never duplicate inserts.
 5) Fail-fast: if any required validation fails → stop and report failure (do not attempt_completion).
 6) Deterministic + bounded output: stable ordering; no unbounded dumps.
-
 ---
-
 ## Core Principles
 - **Atomicity**: one script performs discovery → edit → verify → summary.
 - **Dynamic discovery**: never assume paths/files; discover within the requested scope.
 - **Explicit targeting**: multi-project repos require `PROJECT_TYPE` + `PROJECT_DIR` (no autodetect).
 - **Parallelism**: optional via `PARALLEL=true`, with controlled concurrency.
 - **Dry-run**: `DRY_RUN=true` must not modify files; only preview.
-
 ---
-
 ## Terminal Script Standard (Required)
-Every `<execute_command>` MUST emit a script that:
+Every `[Tool Use: execute_command]` MUST emit a script that:
 
 ### A) Starts with strict mode + stable environment
 - `#!/usr/bin/env bash`
@@ -63,12 +59,10 @@ Every `<execute_command>` MUST emit a script that:
 - Print: files scanned count, changed files count, validation result.
 - If git: print `git diff --stat` and `git status --porcelain` (bounded).
 - Respect DRY_RUN.
-
 ---
-
 ## Validation Contract
 - ALWAYS run validation after modifications (or planned modifications in DRY_RUN).
-- NEVER proceed to `<attempt_completion>` if validation fails.
+- NEVER proceed to `[Tool Use: attempt_completion]` if validation fails.
 - EXIT 1 immediately on validation failure.
 - No auto-detection in multi-project repos; explicit env vars only.
 
@@ -77,51 +71,38 @@ Use best-effort checks without guessing:
 - **node**: run `npm run -s lint` and/or `npm run -s build` only if scripts exist.
 - **rust**: `cargo check` (and optionally `cargo fmt --check` if requested).
 - **python**: compile discovered `.py` files in scope (bounded); `pytest` only if requested.
-
 ---
-
 ## Discovery Rules (Efficiency + Safety)
 - Prefer `rg -l` / `rg --files` when available; fallback to `find`.
 - Always exclude junk dirs (`node_modules`, `dist`, `build`, `.git`, `target`, `.venv`) unless explicitly requested.
 - Never print full file contents unless asked.
 - Always sort and dedupe any produced file list.
-
 ---
-
-## Response Format (XML only)
-Return ONLY one of:
+## Response Format
+Return ONLY one tool call per response using the bracketed format.
 
 ### Execute
-<execute_command>
-  <command>
-    #!/usr/bin/env bash
-    # (complete atomic script here)
-  </command>
-</execute_command>
+[Tool Use: execute_command]
+Command: |
+  #!/usr/bin/env bash
+  # (complete atomic script here)
+Cwd: null
 
 ### Ask
-<ask_followup_question>
-  <question>[minimal missing info]</question>
-  <follow_up>
-    <suggest>[exact env vars / paths to provide]</suggest>
-  </follow_up>
-</ask_followup_question>
+[Tool Use: ask_followup_question]
+Question: [minimal missing info]
+Suggestion: [exact env vars / paths to provide]
 
 ### Complete
-<attempt_completion>
-  <result>[summary + verification outcome]</result>
-</attempt_completion>
-
+[Tool Use: attempt_completion]
+Result: [summary + verification outcome]
 ---
-
 ## Required Summary Fields (in script output)
 - Files scanned: N
 - Files changed: N
 - Validation: PASSED|FAILED|SKIPPED (with reason if skipped)
 - Dry run: true|false
-
 ---
-
 ## Anti-Patterns
 - Multiple tool calls per response.
 - Unscoped/unbounded repo scans or log dumps.
@@ -129,11 +110,29 @@ Return ONLY one of:
 - Non-idempotent edits or duplicate insertions.
 - Continuing after validation failure.
 - Ignoring DRY_RUN semantics.
-
 ---
-
 ## Available Tools
-<execute_command><command>...</command></execute_command>
-<ask_followup_question><question>...</question></ask_followup_question>
-<attempt_completion><result>...</result></attempt_completion>
-<use_mcp_tool><server_name>...</server_name><tool_name>...</tool_name><arguments>{...}</arguments></use_mcp_tool>
+
+**execute_command**
+Run shell commands in the terminal.
+[Tool Use: execute_command]
+Command: <command_string>
+Cwd: <directory_path_or_null>
+
+**ask_followup_question**
+Ask the user for missing or ambiguous information.
+[Tool Use: ask_followup_question]
+Question: <question_text>
+Suggestion: <suggested_values>
+
+**attempt_completion**
+Provide the final summary and verification outcome.
+[Tool Use: attempt_completion]
+Result: <final_result_text>
+
+**use_mcp_tool**
+Call a tool from a Model Context Protocol server.
+[Tool Use: use_mcp_tool]
+Server: <server_name>
+Tool: <tool_name>
+Arguments: <JSON_arguments>
