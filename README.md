@@ -27,34 +27,37 @@ Generally, agentic harnesses provide an ergonomic toolset for operational intera
 | **Validation** | **Reactive**: Errors are often found only after the LLM attempts the next tool call. | **Proactive**: Validation (e.g., compiler checks) is integrated into the script; the script fails fast. |
 | **Reliability** | Prone to "tool-call churning" where the LLM spends turns fixing small syntax errors. | Deterministic; the Python script handles the logic, reducing the LLM's cognitive load. |
 
-#### Visual Workflow Comparison
+### Visual Workflow Comparison
+
+#### Traditional Approach
 
 ```mermaid
 graph TD
-    subgraph Traditional["Traditional Approach"]
-        T1["LLM: Request Read"] --> T2["Env: Return Content"]
-        T2 --> T3["LLM: Request Read 2"]
-        T3 --> T4["Env: Return Content 2"]
-        T4 --> T5["LLM: Request Write"]
-        T5 --> T6["Env: Confirm Write"]
-        T6 --> T7["LLM: Request Test"]
-        T7 --> T8["Env: Return Test Result"]
-    end
-
-    subgraph Atomic["atomic-ops Approach"]
-        A1["LLM: execute_code"] --> A2["Python Runtime"]
-
-        subgraph Runtime["Internal Script Execution"]
-            P1["Snapshot"] --> P2["Discovery"]
-            P2 --> P3["Process/Edit"]
-            P3 --> P4["Validate/Test"]
-        end
-
-        A2 --> Runtime
-        Runtime --> A3["Env: Return Final Summary"]
-        A3 --> A4["LLM: Final Review"]
-    end
+    T1["LLM: Request Read"] --> T2["Env: Return Content"]
+    T2 --> T3["LLM: Request Read 2"]
+    T3 --> T4["Env: Return Content 2"]
+    T4 --> T5["LLM: Request Write"]
+    T5 --> T6["Env: Confirm Write"]
+    T6 --> T7["LLM: Request Test"]
+    T7 --> T8["Env: Return Test Result"]
 ```
+
+#### `atomic-ops` Approach
+```mermaid
+graph TD
+    A1["LLM: execute_code"] --> A2["Python Runtime"]
+
+    subgraph Runtime["Internal Script Execution"]
+        P1["Snapshot"] --> P2["Discovery"]
+        P2 --> P3["Process/Edit"]
+        P3 --> P4["Validate/Test"]
+    end
+
+    A2 --> Runtime
+    Runtime --> A3["Env: Return Final Summary"]
+    A3 --> A4["LLM: Final Review"]
+```
+
 
 #### Concrete Example: Batch Processing
 Instead of 10 separate `read_file` and `write_file` calls, `atomic-ops` instructs to use a single script:
