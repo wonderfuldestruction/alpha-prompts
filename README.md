@@ -2,11 +2,12 @@
 
 This repository contains a set of high-efficiency system prompts and skills for code engineering or general purpose applications.
 
-Available for `Hermes Agent` and `Kilocode` v5.12.x
+Available for `Hermes Agent` and `Kilocode` v5.12.x and agnostic SKILL.md file compatible harnesses like Pi.
 
 ## Key Advantages
 
 - **Efficiency**: Up to 98% time & token reduction compared to traditional multiple tool call approaches. Dramatically faster end-to-end completion.
+- **MTP Boost**: Longer horizon sessions see faster execution as MTP inference loves repetitive code work.
 - **Batching**: Stacks all required execution in a single flow, feeding validation immediately into the next step.
 - **Persistence**: Longer sessions as the context window is preserved due to fewer tool call churns.
 - **Reliability**: Fewer errors as the LLM focuses on context rather than patching repetitive tool calls.
@@ -18,7 +19,7 @@ Generally, agentic harnesses provide an ergonomic toolset for operational intera
 
 ### Traditional Approach vs. `atomic-ops` Example Approach
 
-| Feature | Traditional Approach (Anti-Pattern) | `atomic-ops` Approach (Optimized) |
+| Feature | Separate Toll Calls (Anti-Pattern) | `atomic-ops` Approach |
 | :--- | :--- | :--- |
 | **Tool Call Pattern** | **Sequential & Chatty**: Multiple back-and-forth turns between the LLM and the environment. | **Batched & Atomic**: A single `execute_code` call containing a comprehensive Python script. |
 | **Execution Flow** | `read_file` $\rightarrow$ LLM $\rightarrow$ `read_file` $\rightarrow$ LLM $\rightarrow$ `write_file` | `execute_code` $\rightarrow$ (Python Runtime: Discovery $\rightarrow$ Process $\rightarrow$ Validate) $\rightarrow$ LLM |
@@ -26,6 +27,7 @@ Generally, agentic harnesses provide an ergonomic toolset for operational intera
 | **Context Usage** | **Inefficient**: Context window is filled with repetitive tool call/response churn. | **Efficient**: Only the final summary and critical errors are returned to the LLM. |
 | **Validation** | **Reactive**: Errors are often found only after the LLM attempts the next tool call. | **Proactive**: Validation (e.g., compiler checks) is integrated into the script; the script fails fast. |
 | **Reliability** | Prone to "tool-call churning" where the LLM spends turns fixing small syntax errors. | Deterministic; the Python script handles the logic, reducing the LLM's cognitive load. |
+| **MTP Boost** | Speed generally optimal as standard, depending type of task. | MTP loves repetitive patterns like coding, significantly boosts inference over long horizon sessions, on larg or failed scripts.  |
 
 ### Visual Workflow Comparison
 
@@ -78,7 +80,18 @@ for f in files:
 # 3. Finalize: Single write operation
 write_file(path="summary.md", content="\n".join(summaries))
 ```
+## Agnostic Skills - `atomic-ops`
 
+### Installation
+
+Tuned for SKILL.md agnostic harnesses like Pi.
+
+Either copy-paste, or ask agent:
+
+```markdown
+Create the `atomic-ops` skill and copy the instructions from 
+`https://github.com/wonderfuldestruction/alpha-prompts/blob/main/agnostic-skills/atomic-ops/SKILL.md`
+```
 
 ## Hermes Agent Skill - `atomic-ops`
 
@@ -87,14 +100,14 @@ write_file(path="summary.md", content="\n".join(summaries))
 Tuned for Hermes Agent, simply request your agent:
 
 ```markdown
-Create the `atomic-ops` skill and copy the instructions from `https://github.com/wonderfuldestruction/alpha-prompts/blob/main/atomic-ops/SKILL.md`
+Create the `atomic-ops` skill and copy the instructions from `https://github.com/wonderfuldestruction/alpha-prompts/blob/main/hermes/atomic-ops/SKILL.md`
 ```
 
 ### Notes
 
-The ideal alternative configuration would be injecting into the system prompt, or fine-tuning your favourite model. Friendly reminder that `SKILL.md` can get drifted in compacted sessions and might have to be ocasionally reminded to the agent.
+Friendly reminder that `SKILL.md` can get drifted in compacted sessions and might have to be ocasionally reminded to the agent.
 
-At the time of this writing, sub-delegated agents in Hermes seem to **not** execute skills unless explained upon delegation, which is a tedious endeavour. Only the main agents follow skills naturally.
+LLMs ocasionally miss system prompts instructions and could get drifted in compactions. Using `SKILL.md` and reminding model seems to offer better outcomes.
 
 
 ## Kilocode Custom Agent - `system-code-alpha`
